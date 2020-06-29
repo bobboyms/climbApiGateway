@@ -27,7 +27,6 @@ public class JettyServer implements WebServer {
 
         final Server server = new Server(8080);
 
-
         ServletContextHandler servletContextHandler = new ServletContextHandler (ServletContextHandler.SESSIONS);
         servletContextHandler.setContextPath("/");
 
