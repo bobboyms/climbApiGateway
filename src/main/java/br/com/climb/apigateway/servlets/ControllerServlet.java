@@ -1,6 +1,8 @@
 package br.com.climb.apigateway.servlets;
 
-import br.com.climb.apigateway.tcpclient.TcpClient;
+import br.com.climb.apigateway.tcpclient.ClientHandler;
+import br.com.climb.apigateway.tcpclient.TcpClientApiGateway;
+import br.com.climb.commons.generictcpclient.TcpClient;
 import br.com.climb.commons.reqrespmodel.ObjectRequest;
 import br.com.climb.commons.reqrespmodel.Request;
 import br.com.climb.commons.reqrespmodel.Response;
@@ -33,16 +35,16 @@ public class ControllerServlet extends HttpServlet {
 
     private synchronized void responseForClient(HttpServletResponse response, HttpServletRequest request) throws IOException {
 
-        TcpClient client = new TcpClient(getLocalRequest(request));
-        client.initialize();
-        Response objectResponse = client.getResponse();
+        final TcpClient client = new TcpClientApiGateway(new ClientHandler(), "127.0.0.1", 1234);
+        client.sendRequest(getLocalRequest(request));
+        Response objectResponse = (Response) client.getResponse();
         client.closeConnection();
 
         response.setContentType(objectResponse.getContentType());
         response.setCharacterEncoding(objectResponse.getCharacterEncoding());
         response.setStatus(objectResponse.getStatus());
 
-        ServletOutputStream out = response.getOutputStream();
+        final ServletOutputStream out = response.getOutputStream();
         out.write(objectResponse.getBody());
         out.flush();
         out.close();

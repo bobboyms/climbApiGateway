@@ -1,5 +1,6 @@
 package br.com.climb.apigateway;
 
+import br.com.climb.apigateway.serverdiscovery.DiscoveryServer;
 import br.com.climb.commons.configuration.ConfigFile;
 import br.com.climb.commons.configuration.ConfigFileBean;
 import br.com.climb.commons.configuration.FactoryConfigFile;
@@ -27,8 +28,13 @@ public class ClimbApplication {
         webServer.start();
     }
 
+    public static void startServerDiscovery() throws IOException, ConfigFileException {
+        new DiscoveryServer().run();
+    }
+
     public static void run(Class<?> mainclass) throws Exception {
         loadConfigurations(mainclass);
+        startServerDiscovery();
         startWebServer();
     }
 
