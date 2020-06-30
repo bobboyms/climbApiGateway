@@ -1,7 +1,7 @@
 package br.com.climb.apigateway.serverdiscovery;
 
-import br.com.climb.commons.discovery.model.DiscoveryRequest;
-import br.com.climb.commons.discovery.model.DiscoveryResponseObject;
+import br.com.climb.commons.model.DiscoveryRequest;
+import br.com.climb.commons.model.DiscoveryResponseObject;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;

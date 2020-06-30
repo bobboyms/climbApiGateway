@@ -1,6 +1,7 @@
 package br.com.climb.apigateway.serverdiscovery;
 
-import br.com.climb.commons.discovery.model.DiscoveryRequest;
+
+import br.com.climb.commons.model.DiscoveryRequest;
 
 import java.util.HashSet;
 import java.util.Set;
