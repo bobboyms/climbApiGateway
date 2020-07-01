@@ -1,11 +1,18 @@
 package br.com.climb.apigateway.servlets;
 
+import br.com.climb.apigateway.serverdiscovery.Discovery;
+import br.com.climb.apigateway.serverdiscovery.DiscoveryManager;
 import br.com.climb.apigateway.tcpclient.ClientHandler;
 import br.com.climb.apigateway.tcpclient.TcpClientApiGateway;
+import br.com.climb.commons.execptions.NotFoundException;
 import br.com.climb.commons.generictcpclient.TcpClient;
+import br.com.climb.commons.model.DiscoveryRequest;
 import br.com.climb.commons.reqrespmodel.ObjectRequest;
 import br.com.climb.commons.reqrespmodel.Request;
 import br.com.climb.commons.reqrespmodel.Response;
+import br.com.climb.commons.url.NormalizedUrl;
+import br.com.climb.commons.url.NormalizedUrlManager;
+import org.apache.mina.core.RuntimeIoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +23,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ControllerServlet extends HttpServlet {
@@ -33,21 +41,49 @@ public class ControllerServlet extends HttpServlet {
                 request.getSession().getId());
     }
 
-    private synchronized void responseForClient(HttpServletResponse response, HttpServletRequest request) throws IOException {
+    private synchronized void responseForClient(HttpServletResponse response, HttpServletRequest request) throws IOException, NotFoundException {
 
-        final TcpClient client = new TcpClientApiGateway(new ClientHandler(), "127.0.0.1", 1234);
-        client.sendRequest(getLocalRequest(request));
-        Response objectResponse = (Response) client.getResponse();
-        client.closeConnection();
+        final Request localRequest = getLocalRequest(request);
+//        final String normalizedUrl = new NormalizedUrlManager().getNormalizedUrl(localRequest);
 
-        response.setContentType(objectResponse.getContentType());
-        response.setCharacterEncoding(objectResponse.getCharacterEncoding());
-        response.setStatus(objectResponse.getStatus());
+        System.out.println(request.getPathInfo());
+        System.out.println(request.getMethod());
+//        System.out.println(normalizedUrl);
 
-        final ServletOutputStream out = response.getOutputStream();
-        out.write(objectResponse.getBody());
-        out.flush();
-        out.close();
+        Discovery discoveryManager = new DiscoveryManager();
+        Optional discoveryRequest = discoveryManager.getDiscoveryRequest(localRequest);
+
+        if (!discoveryRequest.isPresent()) {
+            throw new NotFoundException("Not found url: " + request.getPathInfo());
+        }
+
+        DiscoveryRequest discovery = (DiscoveryRequest) discoveryRequest.get();
+
+        System.out.println("Discovery: " + discovery);
+
+        try {
+
+            final TcpClient client = new TcpClientApiGateway(new ClientHandler(), discovery.getIpAddress(), new Integer(discovery.getPort()));
+            client.sendRequest(localRequest);
+            Response objectResponse = (Response) client.getResponse();
+            client.closeConnection();
+
+            response.setContentType(objectResponse.getContentType());
+            response.setCharacterEncoding(objectResponse.getCharacterEncoding());
+            response.setStatus(objectResponse.getStatus());
+
+            if (objectResponse.getBody() != null) {
+                final ServletOutputStream out = response.getOutputStream();
+                out.write(objectResponse.getBody());
+                out.flush();
+                out.close();
+            }
+
+        } catch (RuntimeIoException e) {
+            discoveryManager.removeDiscoveryRequest(discovery);
+            throw new NotFoundException("Not access client: " + discovery.getIpAddress() + "/" + discovery.getPort());
+        }
+
 
     }
 
@@ -169,10 +205,11 @@ public class ControllerServlet extends HttpServlet {
 
                     responseForClient(res, req);
 
+                } catch (NotFoundException e) {
+                    logger.error("Not fount {}", e);
+                    res.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 } catch (Exception e) {
-
                     logger.error("DoGet {}", e);
-
                     res.setContentType(TEXT_PLAIN);
                     res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 

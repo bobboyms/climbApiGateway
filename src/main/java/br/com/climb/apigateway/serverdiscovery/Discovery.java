@@ -2,8 +2,15 @@ package br.com.climb.apigateway.serverdiscovery;
 
 
 import br.com.climb.commons.model.DiscoveryRequest;
+import br.com.climb.commons.reqrespmodel.Request;
+
+import java.util.Optional;
 
 public interface Discovery {
-    DiscoveryRequest getDiscoveryRequest(String method, String url);
+
+    Optional getDiscoveryRequest(Request request);
+
     void addDiscoveryRequest(DiscoveryRequest response);
+
+    void removeDiscoveryRequest(DiscoveryRequest request);
 }

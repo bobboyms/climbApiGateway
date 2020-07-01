@@ -16,7 +16,6 @@ public class ServerHandler extends IoHandlerAdapter {
     @Override
     public void messageReceived(IoSession session, Object message) throws Exception {
 
-        System.out.println("Adicionou Discovery: " + message);
         discovery.addDiscoveryRequest((DiscoveryRequest) message);
 
         DiscoveryResponseObject discoveryResponseObject = new DiscoveryResponseObject();
