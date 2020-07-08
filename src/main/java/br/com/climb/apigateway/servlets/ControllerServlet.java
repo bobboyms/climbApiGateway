@@ -44,11 +44,9 @@ public class ControllerServlet extends HttpServlet {
     private synchronized void responseForClient(HttpServletResponse response, HttpServletRequest request) throws IOException, NotFoundException {
 
         final Request localRequest = getLocalRequest(request);
-//        final String normalizedUrl = new NormalizedUrlManager().getNormalizedUrl(localRequest);
 
         System.out.println(request.getPathInfo());
         System.out.println(request.getMethod());
-//        System.out.println(normalizedUrl);
 
         Discovery discoveryManager = new DiscoveryManager();
         Optional discoveryRequest = discoveryManager.getDiscoveryRequest(localRequest);
@@ -198,12 +196,51 @@ public class ControllerServlet extends HttpServlet {
 
             new Thread(() -> {
 
+                System.out.println("Criou thread: " + Thread.currentThread().getId());
+
                 final HttpServletRequest req = (HttpServletRequest) asyncContext.getRequest();
                 final HttpServletResponse res = (HttpServletResponse) asyncContext.getResponse();
 
                 try {
 
-                    responseForClient(res, req);
+                    final Request localRequest = getLocalRequest(request);
+
+                    System.out.println(request.getPathInfo());
+                    System.out.println(request.getMethod());
+
+                    Discovery discoveryManager = new DiscoveryManager();
+                    Optional discoveryRequest = discoveryManager.getDiscoveryRequest(localRequest);
+
+                    if (!discoveryRequest.isPresent()) {
+                        throw new NotFoundException("Not found url: " + request.getPathInfo());
+                    }
+
+                    DiscoveryRequest discovery = (DiscoveryRequest) discoveryRequest.get();
+
+                    System.out.println("Discovery: " + discovery);
+
+                    try {
+
+                        final TcpClient client = new TcpClientApiGateway(new ClientHandler(), discovery.getIpAddress(), new Integer(discovery.getPort()));
+                        client.sendRequest(localRequest);
+                        Response objectResponse = (Response) client.getResponse();
+                        client.closeConnection();
+
+                        response.setContentType(objectResponse.getContentType());
+                        response.setCharacterEncoding(objectResponse.getCharacterEncoding());
+                        response.setStatus(objectResponse.getStatus());
+
+                        if (objectResponse.getBody() != null) {
+                            final ServletOutputStream out = response.getOutputStream();
+                            out.write(objectResponse.getBody());
+                            out.flush();
+                            out.close();
+                        }
+
+                    } catch (RuntimeIoException e) {
+                        discoveryManager.removeDiscoveryRequest(discovery);
+                        throw new NotFoundException("Not access client: " + discovery.getIpAddress() + "/" + discovery.getPort());
+                    }
 
                 } catch (NotFoundException e) {
                     logger.error("Not fount {}", e);
