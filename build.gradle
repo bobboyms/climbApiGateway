@@ -16,9 +16,11 @@ repositories {
     jcenter()
 }
 
+def climbCommons = "1.0.7"
+
 dependencies {
 
-    compile 'br.com.climbcommons:climb-commons:1.0.6'
+    compile 'br.com.climbcommons:climb-commons:' + climbCommons
 
     testCompile 'org.hamcrest:hamcrest-library:2.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'

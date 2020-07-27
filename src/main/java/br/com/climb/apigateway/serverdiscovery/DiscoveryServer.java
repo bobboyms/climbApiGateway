@@ -20,7 +20,7 @@ public class DiscoveryServer {
         this.configFile = configFile;
     }
 
-    public void run() throws IOException, ConfigFileException {
+    public void run() throws IOException {
         IoAcceptor acceptor = new NioSocketAcceptor();
         acceptor.getFilterChain().addLast( "logger1", new LoggingFilter() );
         acceptor.getFilterChain().addLast( "codec1", new ProtocolCodecFilter(

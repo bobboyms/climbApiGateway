@@ -15,13 +15,13 @@ import java.util.EnumSet;
 
 public class JettyServer implements WebServer {
 
-    private ConfigFile configFile;
+    private final Logger logger = LoggerFactory.getLogger(JettyServer.class);
+
+    private final ConfigFile configFile;
 
     public JettyServer(ConfigFile configFile) {
         this.configFile = configFile;
     }
-
-    private static final Logger logger = LoggerFactory.getLogger(JettyServer.class);
 
     public void start() throws Exception {
 
